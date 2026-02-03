@@ -2,17 +2,32 @@
 import { GoogleGenAI } from "@google/genai";
 import { FilterCriteria, Priority, TicketState, ComplianceStatus, Ticket } from "../types";
 
-// In a real app, strict error handling for missing keys is needed.
-// For this demo, we assume the environment is set up correctly as per instructions.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Lazy initialization to prevent app crash if API key is missing
+let aiClient: GoogleGenAI | null = null;
 
-export const askData = async (query: string): Promise<FilterCriteria | null> => {
-  if (!process.env.API_KEY) {
-    console.warn("No API Key provided for Ask Data");
+const getAIClient = (): GoogleGenAI | null => {
+  if (aiClient) return aiClient;
+
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY; // Support both naming conventions
+  if (!apiKey) {
+    console.warn("Gemini API Key is missing. AI features will be disabled.");
     return null;
   }
 
-  const model = 'gemini-3-flash-preview';
+  try {
+    aiClient = new GoogleGenAI({ apiKey });
+    return aiClient;
+  } catch (e) {
+    console.error("Failed to initialize Gemini Client:", e);
+    return null;
+  }
+};
+
+export const askData = async (query: string): Promise<FilterCriteria | null> => {
+  const ai = getAIClient();
+  if (!ai) return null;
+
+  const model = 'gemini-2.0-flash-exp'; // Updated to latest available model
   const prompt = `
     You are an AI assistant for a GRC (Governance, Risk, Compliance) dashboard.
     Convert the following natural language user query into a structured JSON filter object.
@@ -58,11 +73,12 @@ export const askData = async (query: string): Promise<FilterCriteria | null> => 
 };
 
 export const generateExecutiveSummary = async (riskCount: number, complianceCount: number, topRiskCategory: string): Promise<string> => {
-  if (!process.env.API_KEY) return "AI Summary unavailable (No API Key).";
+  const ai = getAIClient();
+  if (!ai) return "AI Summary unavailable (No API Key).";
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.0-flash-exp',
       contents: `Generate a 1-sentence executive summary for a GRC dashboard with: ${riskCount} high risk tickets, ${complianceCount} non-compliant items, and primary concern area being ${topRiskCategory}. Keep it professional and urgent if needed.`,
     });
     return response.text || "Summary generation failed.";
@@ -72,7 +88,8 @@ export const generateExecutiveSummary = async (riskCount: number, complianceCoun
 }
 
 export const generateRagResponse = async (query: string, tickets: Ticket[]): Promise<string> => {
-  if (!process.env.API_KEY) return "AI RAG unavailable (No API Key).";
+  const ai = getAIClient();
+  if (!ai) return "AI RAG unavailable (No API Key).";
 
   // Limit context to prevent token overflow and ensure relevance.
   // We prioritize tickets by Risk Score to ensure the AI sees the most critical items first.
@@ -111,7 +128,7 @@ export const generateRagResponse = async (query: string, tickets: Ticket[]): Pro
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.0-flash-exp',
       contents: prompt,
     });
     return response.text || "No insights generated.";
