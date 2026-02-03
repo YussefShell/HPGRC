@@ -1,0 +1,96 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+    <title>HPNow GRC 3.0 Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+      // Polyfill process and global for dependencies
+      window.process = {
+        env: { NODE_ENV: 'production' },
+        version: '',
+        nextTick: (cb) => setTimeout(cb, 0),
+      };
+      window.global = window;
+
+      // Minimal Buffer Polyfill for browser (base64/utf8 handling)
+      // This satisfies dependencies checking for global Buffer without loading external CommonJS scripts
+      if (!window.Buffer) {
+        window.Buffer = {
+          isBuffer: () => false,
+          from: (data, encoding) => {
+            if (encoding === 'base64') {
+              try { return Uint8Array.from(atob(data), c => c.charCodeAt(0)); } catch(e) { return new Uint8Array(0); }
+            }
+            return new TextEncoder().encode(data);
+          },
+          alloc: (size) => new Uint8Array(size),
+        };
+      }
+    </script>
+    
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Outfit', 'sans-serif'],
+            },
+            colors: {
+              brand: {
+                dark: '#0f172a',
+                glass: 'rgba(30, 41, 59, 0.7)',
+                accent: '#3b82f6',
+                danger: '#ef4444',
+                warning: '#f59e0b',
+                success: '#10b981',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #020617; /* Slate 950 */
+        color: #f8fafc;
+        font-family: 'Outfit', sans-serif;
+      }
+      .glass-panel {
+        background: rgba(30, 41, 59, 0.4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .glass-sidebar {
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(16px);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0f172a; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #334155; 
+        border-radius: 4px;
+      }
+    </style>
+
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
