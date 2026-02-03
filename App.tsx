@@ -1880,6 +1880,10 @@ export default function App() {
                       <span>Active Agents</span>
                       <span>Predicted Vol</span>
                     </div>
+                    <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono mt-4 pt-4 border-t border-white/5">
+                      <span>HPGRC v3.1</span>
+                      <span>System Status: Online</span>
+                    </div>
                   </div>
                 </div>
               </div>
